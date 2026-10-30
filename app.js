@@ -891,5 +891,17 @@
   if (window.ResizeObserver) new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(layout); }).observe(svg);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { update(); });
 
+  // entrances: parts of each section rise once as they scroll in; skipped for reduced motion
+  if (!reduceMotion.matches && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.presets, .chart-wrap, .tints, .read-col .panel, .tide, .notes h2, .notes-cols > div, .foot-name').forEach((n, i) => {
+      n.classList.add('reveal');
+      n.style.setProperty('--d', `${(i % 3) * 80}ms`);
+      io.observe(n);
+    });
+  }
+
   if (reduceMotion.matches) S.cursor = 0.62; else setTimeout(sweep, 700);
 })();
