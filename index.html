@@ -3,378 +3,159 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Archipelago Marine Cadence - Philippine Coral Reef Telemetry & Ocean Atlas</title>
-  <meta name="description" content="An interactive oceanographic cartography, bathymetric transect profiler, and NOAA Degree Heating Weeks thermal stress engine for Philippine coral reef sanctuaries.">
+  <title>Sound Macajalar Bay: an interactive sounding-line study</title>
+  <meta name="description" content="An interactive browser study in nautical chart conventions. Drag a sounding line across a hand-drawn chart of Macajalar Bay and read the seabed profile. Illustrative depths, not survey data.">
+  <meta name="theme-color" content="#f6f8f4">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f6f8f4'/%3E%3Cpath d='M5 25 27 7' stroke='%23a3125f' stroke-width='3'/%3E%3Ccircle cx='5' cy='25' r='4' fill='%23f6f8f4' stroke='%23a3125f' stroke-width='2.5'/%3E%3Ccircle cx='27' cy='7' r='4' fill='%23f6f8f4' stroke='%23a3125f' stroke-width='2.5'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <a class="skip" href="#chart-section">Skip to the chart</a>
 
-  <!-- Top Marine Navigation Bar -->
-  <header class="ocean-header">
-    <div class="header-inner">
-      <div class="brand">
-        <span class="brand-tech-badge">ARGO // WGS84</span>
-        <div class="brand-text">
-          <span class="brand-kicker">OCEANOGRAPHIC RESEARCH INITIATIVE</span>
-          <span class="brand-title">ARCHIPELAGO MARINE CADENCE</span>
+  <div class="wrap">
+    <header class="masthead">
+      <div class="mast-main">
+        <h1 class="rise">Sound Macajalar Bay</h1>
+        <p class="lede rise" style="--d:90ms">Drag either end of the magenta line across the chart and read the seabed beneath it.</p>
+      </div>
+      <p class="mast-note rise" style="--d:180ms">
+        An interactive study in nautical chart conventions, made for the browser. The coastline is hand-drawn and the depths come from a small formula, so nothing here is survey data and none of it is for navigation.
+      </p>
+    </header>
+
+    <main class="sheet" id="chart-section">
+      <section class="chart-col" aria-labelledby="chart-h">
+        <h2 id="chart-h" class="sr-only">Chart of Macajalar Bay</h2>
+        <div class="presets" role="group" aria-label="Example lines">
+          <button type="button" class="chip" data-preset="out">Out from Cagayan de Oro</button>
+          <button type="button" class="chip" data-preset="across">Across the bay</button>
+          <button type="button" class="chip" data-preset="east">Along the east shore</button>
         </div>
+
+        <div class="chart-wrap">
+          <svg id="chart" class="chart" xmlns="http://www.w3.org/2000/svg" role="group" aria-labelledby="chartTitle chartDesc">
+            <title id="chartTitle">Illustrative chart of Macajalar Bay with a draggable sounding line</title>
+            <desc id="chartDesc">Chart with north at the top. Land lies to the south and east, open water to the north and west. Two handles, A and B, set the ends of a sounding line. The seabed profile along it is shown beside the chart and in a table below it.</desc>
+            <g id="gTint"></g>
+            <g id="gContours"></g>
+            <g id="gLand"></g>
+            <g id="gGrat"></g>
+            <g id="gLabels"></g>
+            <g id="gSoundings"></g>
+            <g id="gLine"></g>
+            <g id="gRose"></g>
+            <g id="gScale"></g>
+          </svg>
+          <noscript><p class="nojs">The chart is drawn with JavaScript. Without it, this page can only show its notes below.</p></noscript>
+        </div>
+
+        <div class="tints">
+          <p class="tints-title" id="tintsTitle">Depth tints, charted depth</p>
+          <ul id="tints" aria-labelledby="tintsTitle"></ul>
+        </div>
+      </section>
+
+      <div class="read-col">
+        <section class="panel" aria-labelledby="profile-h">
+          <div class="panel-head">
+            <h2 id="profile-h">Seabed along the line</h2>
+            <div class="units" role="group" aria-label="Sounding units">
+              <button type="button" class="chip" id="unitM" aria-pressed="true">Metres</button>
+              <button type="button" class="chip" id="unitFm" aria-pressed="false">Fathoms</button>
+            </div>
+          </div>
+          <svg id="profile" class="profile" tabindex="0" role="slider" aria-label="Lead position along the line" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60"></svg>
+          <p class="ve" id="veNote"></p>
+          <p class="sr-only" id="live" aria-live="polite"></p>
+        </section>
+
+        <section class="panel" aria-labelledby="read-h">
+          <h2 id="read-h" class="sr-only">Readings</h2>
+          <dl class="stats">
+            <div class="stat stat-main">
+              <dt>Under the lead</dt>
+              <dd class="num" id="rDepth">&ndash;</dd>
+              <dd class="sub" id="rDepthSub"></dd>
+            </div>
+            <div class="stat">
+              <dt>Line length</dt>
+              <dd class="num" id="rLen">&ndash;</dd>
+              <dd class="sub" id="rLenSub"></dd>
+            </div>
+            <div class="stat">
+              <dt>Deepest on the line</dt>
+              <dd class="num" id="rDeep">&ndash;</dd>
+              <dd class="sub" id="rDeepSub"></dd>
+            </div>
+            <div class="stat">
+              <dt>Steepest drop</dt>
+              <dd class="num" id="rSteep">&ndash;</dd>
+              <dd class="sub" id="rSteepSub"></dd>
+            </div>
+          </dl>
+          <details class="tabular" id="tableDetails">
+            <summary>Read the line as a table</summary>
+            <div class="table-scroll">
+              <table>
+                <caption class="sr-only">Charted depth every nautical mile along the line, from A to B</caption>
+                <thead><tr><th scope="col">Distance from A</th><th scope="col">Position (approx.)</th><th scope="col" id="thDepth">Depth</th></tr></thead>
+                <tbody id="lineTable"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+
       </div>
 
-      <div class="telemetry-bar">
-        <div class="tele-item">
-          <span class="tele-label">SST Climatology Baseline</span>
-          <span class="tele-val text-cyan">28.4&deg;C</span>
+    <section class="panel tide" aria-labelledby="tide-h">
+      <h2 id="tide-h">Height of tide</h2>
+      <div class="tide-body">
+        <svg id="gauge" class="gauge" viewBox="0 0 76 200" role="img" aria-label="Tide staff showing the current height"></svg>
+        <div class="tide-controls">
+          <p class="tide-explain">Soundings are charted to a datum, the water level they are measured from. Raise the tide and the water over every sounding deepens by that height.</p>
+          <label for="tideRange" class="range-label">Tide above chart datum <output id="tideOut" for="tideRange">1.00 m</output></label>
+          <input type="range" id="tideRange" min="0" max="2.2" step="0.05" value="1">
         </div>
-        <div class="tele-divider"></div>
-        <div class="tele-item">
-          <span class="tele-label">Benthic Bio-Index</span>
-          <span class="tele-val text-emerald">88.2 / 100</span>
+      </div>
+      <table class="tide-table">
+        <caption>A sample day. Pick a row to set the tide.</caption>
+        <thead><tr><th scope="col">Time</th><th scope="col">Tide</th><th scope="col">Height</th></tr></thead>
+        <tbody id="tideRows"></tbody>
+      </table>
+      <p class="fine">Generated from two sine waves for illustration. It is not a prediction for any date or place.</p>
+    </section>
+    </main>
+  </div>
+
+  <section class="notes" aria-labelledby="notes-h">
+    <div class="wrap notes-grid">
+      <h2 id="notes-h">What is real here, and what is not</h2>
+      <div class="notes-cols">
+        <div>
+          <h3>Drawn to chart conventions</h3>
+          <p>Soundings are printed as numbers, with one decimal where the water is shallow. Depth tints step from dark in the shallows to pale in deep water. The border carries degrees and minutes, the scale bar is in nautical miles and kilometres, and the rose points to true north. The line, its distances, the interpolation and the fathom conversion (1 fathom is 1.8288 m) are computed live in your browser.</p>
         </div>
-        <div class="tele-divider"></div>
-        <div class="tele-item">
-          <span class="tele-label">Monitored Sanctuaries</span>
-          <span class="tele-val">8 Priority MPAs</span>
+        <div>
+          <h3>Made up</h3>
+          <p>The coastline is a rough hand-drawn outline of the bay, with town positions that are only approximate. Depths come from a formula: water deepens with distance from the shore, plus one bank and one canyon placed by hand. The tide table is two sine waves. A real version would swap in a licensed bathymetric grid, such as GEBCO, and tide predictions from a hydrographic office.</p>
+        </div>
+        <div>
+          <h3>A lead line</h3>
+          <p>Before echo sounders, a sailor measured depth by lowering a weighted, marked rope until it touched bottom. The magenta dot on the chart and the vertical line in the profile play that part: drag along the profile to lower the lead anywhere on the line.</p>
         </div>
       </div>
     </div>
-  </header>
+  </section>
 
-  <!-- Main Split Canvas -->
-  <main class="atlas-shell">
-    
-    <!-- Left: Cartographic Map Canvas + Bathymetric Depth Profiler -->
-    <div class="map-viewport-container">
-      
-      <!-- Top Sanctuary Selection Carousel -->
-      <div class="species-carousel">
-        <div class="carousel-track" id="carouselTrack">
-          <button class="taxon-chip" onclick="focusSanctuary('tubbataha', this)">Tubbataha Reefs</button>
-          <button class="taxon-chip" onclick="focusSanctuary('apo-reef', this)">Apo Reef Atoll</button>
-          <button class="taxon-chip active" onclick="focusSanctuary('macajalar', this)">Macajalar Bay (CDO)</button>
-          <button class="taxon-chip" onclick="focusSanctuary('camiguin', this)">Camiguin Black Coral</button>
-          <button class="taxon-chip" onclick="focusSanctuary('taon', this)">Tanon Dolphin Seascape</button>
-          <button class="taxon-chip" onclick="focusSanctuary('coron', this)">Coron Island Biosphere</button>
-          <button class="taxon-chip" onclick="focusSanctuary('malapascua', this)">Monad Shoal Thresher</button>
-          <button class="taxon-chip" onclick="focusSanctuary('siargao', this)">Siargao Trench Shelf</button>
-        </div>
-      </div>
-
-      <!-- Ocean SVG Map (Geographically Proportional) -->
-      <div class="map-stage">
-        <svg id="archipelagoSvg" viewBox="0 0 920 840" class="archipelago-svg" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <!-- Water Depth Gradient -->
-            <radialGradient id="deepOceanGrad" cx="50%" cy="50%" r="70%">
-              <stop offset="0%" stop-color="#0c1a2d"/>
-              <stop offset="60%" stop-color="#06101c"/>
-              <stop offset="100%" stop-color="#020509"/>
-            </radialGradient>
-
-            <!-- Trench Glow Gradient -->
-            <linearGradient id="trenchGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#a855f7" stop-opacity="0.05"/>
-              <stop offset="50%" stop-color="#a855f7" stop-opacity="0.35"/>
-              <stop offset="100%" stop-color="#a855f7" stop-opacity="0.05"/>
-            </linearGradient>
-
-            <!-- Shadow for labels -->
-            <filter id="badgeShadow" x="-10%" y="-20%" width="120%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.7"/>
-            </filter>
-          </defs>
-
-          <!-- Deep Ocean Background with Bathymetric Graticule -->
-          <rect width="920" height="840" fill="url(#deepOceanGrad)" />
-
-          <!-- Bathymetric Lat/Long Grid -->
-          <g stroke="rgba(0, 242, 254, 0.05)" stroke-width="1" stroke-dasharray="4 8">
-            <line x1="120" y1="0" x2="120" y2="840"/>
-            <line x1="320" y1="0" x2="320" y2="840"/>
-            <line x1="520" y1="0" x2="520" y2="840"/>
-            <line x1="720" y1="0" x2="720" y2="840"/>
-            <line x1="0" y1="180" x2="920" y2="180"/>
-            <line x1="0" y1="360" x2="920" y2="360"/>
-            <line x1="0" y1="540" x2="920" y2="540"/>
-            <line x1="0" y1="720" x2="920" y2="720"/>
-          </g>
-
-          <!-- Philippine Trench Axis (Eastern Edge) -->
-          <path d="M 720,280 Q 700,520 730,760" fill="none" stroke="url(#trenchGrad)" stroke-width="42" stroke-linecap="round"/>
-          <text x="735" y="440" class="province-label" style="fill: rgba(168, 85, 247, 0.45); font-size: 8px;">PHILIPPINE TRENCH (-10,540M)</text>
-
-          <!-- 1. Palawan Corridor -->
-          <path class="island-landmass" d="M 280,420 L 255,450 L 175,555 L 140,600 L 155,615 L 205,570 L 290,460 L 305,430 Z" />
-          <text x="185" y="540" class="province-label">PALAWAN</text>
-
-          <!-- 2. Luzon Mainland -->
-          <path class="island-landmass" d="M 410,70 L 450,90 L 485,150 L 465,220 L 490,260 L 535,285 L 515,310 L 460,270 L 420,290 L 395,240 L 375,150 L 390,95 Z" />
-          <text x="425" y="170" class="province-label">LUZON</text>
-
-          <!-- 3. Mindoro Island -->
-          <path class="island-landmass" d="M 370,305 L 415,310 L 430,355 L 395,375 L 360,340 Z" />
-
-          <!-- 4. Visayas Islands -->
-          <path class="island-landmass" d="M 390,410 L 430,400 L 445,435 L 425,475 L 395,465 Z" />
-          <path class="island-landmass" d="M 430,445 L 455,440 L 460,510 L 435,525 L 425,480 Z" />
-          <path class="island-landmass" d="M 465,425 L 485,420 L 480,490 L 465,495 Z" />
-          <path class="island-landmass" d="M 495,475 L 530,465 L 540,495 L 505,510 Z" />
-          <path class="island-landmass" d="M 545,340 L 585,355 L 570,415 L 540,400 Z" />
-          <path class="island-landmass" d="M 535,405 L 565,420 L 555,485 L 525,465 Z" />
-          <text x="475" y="395" class="province-label">VISAYAS</text>
-
-          <!-- 5. Mindanao Mainland -->
-          <path class="island-landmass" d="M 465,580 L 550,560 L 610,575 L 685,580 L 710,640 L 690,720 L 640,750 L 580,740 L 520,725 L 480,685 L 440,650 L 420,605 L 445,595 Z" />
-          <path class="island-landmass" d="M 430,600 L 375,615 L 335,630 L 350,650 L 395,645 L 425,625 Z" />
-          <text x="560" y="670" class="province-label">MINDANAO</text>
-
-          <!-- Kuroshio & Pelagic Oceanic Currents -->
-          <path class="current-flow" d="M 800,780 Q 700,560 690,380 T 730,120" fill="none" stroke="#00f2fe" stroke-width="2" stroke-dasharray="8 12"/>
-          <path class="current-flow" d="M 320,720 Q 380,560 410,480 T 440,320" fill="none" stroke="#38ef7d" stroke-width="1.5" stroke-dasharray="6 10"/>
-
-          <!-- ============================================== -->
-          <!-- INTERACTIVE MARINE NODES WITH TECHNICAL RETICLES -->
-          <!-- ============================================== -->
-
-          <!-- 1. Tubbataha Atolls (Sulu Sea) -->
-          <g class="marine-node" id="node-tubbataha" onclick="selectSanctuary('tubbataha')">
-            <circle cx="295" cy="540" r="14" class="reticle-outer" />
-            <circle cx="295" cy="540" r="6" class="core-point point-coral" />
-            <rect x="200" y="555" width="165" height="24" class="node-bubble" filter="url(#badgeShadow)"/>
-            <text x="210" y="571" class="node-caption">Tubbataha Reefs (UNESCO)</text>
-          </g>
-
-          <!-- 2. Apo Reef (Mindoro Strait) -->
-          <g class="marine-node" id="node-apo-reef" onclick="selectSanctuary('apo-reef')">
-            <circle cx="340" cy="330" r="14" class="reticle-outer" />
-            <circle cx="340" cy="330" r="6" class="core-point point-coral" />
-            <rect x="235" y="305" width="130" height="24" class="node-bubble" filter="url(#badgeShadow)"/>
-            <text x="245" y="321" class="node-caption">Apo Reef Atoll</text>
-          </g>
-
-          <!-- 3. Macajalar Bay Sanctuary (Cagayan de Oro - Primary Focal) -->
-          <g class="marine-node active" id="node-macajalar" onclick="selectSanctuary('macajalar')">
-            <circle cx="535" cy="570" r="16" class="reticle-outer" />
-            <circle cx="535" cy="570" r="7" class="core-point point-cdo" />
-            <rect x="525" y="595" width="195" height="26" class="node-bubble" filter="url(#badgeShadow)" style="stroke: #00f2fe; stroke-width: 1.5;"/>
-            <text x="535" y="612" class="node-caption highlight-cdo">Macajalar Bay Reefs (CDO)</text>
-          </g>
-
-          <!-- 4. Camiguin Black Coral Forest -->
-          <g class="marine-node" id="node-camiguin" onclick="selectSanctuary('camiguin')">
-            <circle cx="550" cy="530" r="14" class="reticle-outer" />
-            <circle cx="550" cy="530" r="5" class="core-point point-pelagic" />
-            <rect x="565" y="520" width="145" height="24" class="node-bubble" filter="url(#badgeShadow)"/>
-            <text x="575" y="536" class="node-caption">Camiguin Black Coral</text>
-          </g>
-
-          <!-- 5. Tanon Strait (Between Cebu & Negros) -->
-          <g class="marine-node" id="node-taon" onclick="selectSanctuary('taon')">
-            <circle cx="450" cy="465" r="14" class="reticle-outer" />
-            <circle cx="450" cy="465" r="5" class="core-point point-pelagic" />
-            <rect x="315" y="475" width="150" height="24" class="node-bubble" filter="url(#badgeShadow)"/>
-            <text x="325" y="491" class="node-caption">Tanon Dolphin Seascape</text>
-          </g>
-
-          <!-- 6. Monad Shoal (Northern Cebu) -->
-          <g class="marine-node" id="node-malapascua" onclick="selectSanctuary('malapascua')">
-            <circle cx="485" cy="385" r="14" class="reticle-outer" />
-            <circle cx="485" cy="385" r="5" class="core-point point-pelagic" />
-            <rect x="500" y="375" width="160" height="24" class="node-bubble" filter="url(#badgeShadow)"/>
-            <text x="510" y="391" class="node-caption">Monad Shoal (Thresher)</text>
-          </g>
-
-          <!-- 7. Coron Island (Northern Palawan) -->
-          <g class="marine-node" id="node-coron" onclick="selectSanctuary('coron')">
-            <circle cx="310" cy="370" r="14" class="reticle-outer" />
-            <circle cx="310" cy="370" r="5" class="core-point point-coral" />
-            <rect x="185" y="360" width="145" height="24" class="node-bubble" filter="url(#badgeShadow)"/>
-            <text x="195" y="376" class="node-caption">Coron Biosphere</text>
-          </g>
-
-          <!-- 8. Siargao Pelagic Shelf (Fronting Philippine Trench) -->
-          <g class="marine-node" id="node-siargao" onclick="selectSanctuary('siargao')">
-            <circle cx="675" cy="545" r="14" class="reticle-outer" />
-            <circle cx="675" cy="545" r="5" class="core-point point-trench" />
-            <rect x="690" y="535" width="155" height="24" class="node-bubble" filter="url(#badgeShadow)"/>
-            <text x="700" y="551" class="node-caption">Siargao Pelagic Shelf</text>
-          </g>
-        </svg>
-
-        <!-- Technical Map Floating HUD -->
-        <div class="map-hud-overlay">
-          <div class="hud-datum">
-            DATUM: <strong>PRS92 / WGS84</strong>
-          </div>
-          <div class="hud-datum">
-            ARGO BUOYS: <strong>124 ACTIVE</strong>
-          </div>
-          <button class="hud-btn" onclick="resetMapView()">[ RESET CDO ANCHOR ]</button>
-        </div>
-      </div>
-
-      <!-- ============================================== -->
-      <!-- BOTTOM: CROSS-SECTIONAL BATHYMETRIC PROFILER   -->
-      <!-- ============================================== -->
-      <div class="bathymetric-panel">
-        <div class="bathy-header">
-          <div class="bathy-title-group">
-            <span class="bathy-title">Bathymetric Transect Profiler</span>
-            <span class="bathy-spec" id="bathySpecLabel">MACAJALAR BAY TRANSECT // TRANSECT DIST: 0-8.0 KM // DEPTH: 2-220M</span>
-          </div>
-          <div class="bathy-legend">
-            <span><span class="legend-swatch" style="background:#00f2fe;"></span>Euphotic (0-200m)</span>
-            <span><span class="legend-swatch" style="background:#3b82f6;"></span>Mesophotic (200-1000m)</span>
-            <span><span class="legend-swatch" style="background:#a855f7;"></span>Abyssal (&gt;1000m)</span>
-          </div>
-        </div>
-        <div class="bathy-stage-wrap">
-          <canvas id="bathyCanvas"></canvas>
-          <div id="bathyTooltip" class="bathy-tooltip"></div>
-        </div>
-      </div>
-
+  <footer class="foot">
+    <div class="wrap foot-row">
+      <p class="foot-name">Macajalar Bay</p>
+      <p>A static page of HTML, CSS and one JavaScript file. No server, no data feeds. <a href="https://github.com/ninoredoble/archipelago-marine-cadence">Source on GitHub</a>.</p>
     </div>
-
-    <!-- Right: Oceanographic Dossier Panel -->
-    <aside class="sanctuary-dossier" id="dossierPanel">
-      
-      <div class="dossier-scroll">
-        <div class="dossier-header">
-          <div class="dossier-meta">
-            <span class="badge-status" id="dossierTier">NORTHERN MINDANAO PRIORITY SANCTUARY // TIER 1</span>
-            <h2 id="dossierTitle">Macajalar Bay Marine Sanctuary</h2>
-            <p class="dossier-subhead" id="dossierSubhead">Cagayan de Oro Coastal Reach // Misamis Oriental // 8&deg;30'N 124&deg;40'E</p>
-          </div>
-          <div class="health-index-badge">
-            <span class="index-num" id="dossierHealth">94.2</span>
-            <span class="index-lbl">Reef Health Index</span>
-          </div>
-        </div>
-
-        <!-- Metric Cards -->
-        <div class="dossier-grid">
-          <div class="dossier-metric">
-            <span class="m-val" id="dossierArea">11,400 ha</span>
-            <span class="m-lbl">Protected Marine Seascape</span>
-          </div>
-          <div class="dossier-metric">
-            <span class="m-val" id="dossierDepth">42 - 180m</span>
-            <span class="m-lbl">Benthic Slope Depth</span>
-          </div>
-          <div class="dossier-metric">
-            <span class="m-val" id="dossierSST">28.1&deg;C</span>
-            <span class="m-lbl">Climatology Baseline SST</span>
-          </div>
-          <div class="dossier-metric">
-            <span class="m-val" id="dossierCoral">68.4%</span>
-            <span class="m-lbl">Hard Coral Cover (Acropora)</span>
-          </div>
-        </div>
-
-        <!-- NOAA Degree Heating Weeks (DHW) Bleaching Engine -->
-        <div class="thermal-simulator-card">
-          <div class="sim-header">
-            <h4>NOAA Coral Reef Watch // Thermal Stress Engine</h4>
-            <span class="sim-pill" id="stressLevelPill">No Stress</span>
-          </div>
-          <p class="sim-desc">
-            Simulate El Nino sea surface temperature departures above Maximum Monthly Mean (MMM) and duration of accumulated thermal exposure to calculate Degree Heating Weeks (DHW):
-          </p>
-
-          <!-- Temperature Anomaly Slider -->
-          <div class="sim-control-group">
-            <div class="control-label-row">
-              <span>SST Anomaly Departure (&Delta;T):</span>
-              <strong id="sstSliderVal">+0.4&deg;C Anomaly</strong>
-            </div>
-            <div class="slider-row">
-              <input type="range" id="sstSlider" min="0" max="3.5" step="0.1" value="0.4" oninput="calculateThermalStress()">
-            </div>
-          </div>
-
-          <!-- Accumulation Duration Selector -->
-          <div class="sim-control-group">
-            <div class="control-label-row">
-              <span>Accumulation Exposure Duration:</span>
-              <strong id="durLabel">4 Weeks Exposure</strong>
-            </div>
-            <div class="duration-selector">
-              <button class="dur-btn" onclick="setExposureDuration(1, this)">1 Wk</button>
-              <button class="dur-btn active" onclick="setExposureDuration(4, this)">4 Wks</button>
-              <button class="dur-btn" onclick="setExposureDuration(8, this)">8 Wks</button>
-              <button class="dur-btn" onclick="setExposureDuration(12, this)">12 Wks</button>
-            </div>
-          </div>
-
-          <!-- Calculated DHW Meter -->
-          <div class="dhw-meter-box">
-            <div class="dhw-meter-top">
-              <span class="dhw-stat" id="dhwVal">1.6 &deg;C-weeks</span>
-              <span class="dhw-sub" id="dhwTier">BLEACHING WATCH // SUB-CRITICAL</span>
-            </div>
-            <div class="stress-meter-bar">
-              <div class="stress-fill" id="stressFill" style="width: 20%; background: #00f2fe;"></div>
-            </div>
-            <div class="stress-readout" id="bleachingProb">
-              Projected Bleaching Probability: 6.4% &bull; Calcification Reduction: 4.8% &bull; Expected Recovery: Normal
-            </div>
-          </div>
-        </div>
-
-        <!-- Hydrodynamic Vectors & Larval Dispersion Engine -->
-        <div class="hydro-simulator-card">
-          <div class="hydro-header">
-            <h4>Hydrodynamic Vectors & Larval Transport</h4>
-            <span class="sim-pill" style="color:#38ef7d; background:rgba(56,239,125,0.12); border-color:rgba(56,239,125,0.3);">ADCP Calibrated</span>
-          </div>
-          <div class="hydro-grid">
-            <div class="hydro-item">
-              <span class="hydro-val" id="hydroCurrentSpeed">1.2 knots</span>
-              <span class="hydro-lbl">Kuroshio Branch Velocity</span>
-            </div>
-            <div class="hydro-item">
-              <span class="hydro-val" id="hydroTidalRegime">Semi-Diurnal Spring</span>
-              <span class="hydro-lbl">Tidal Elevation Flux</span>
-            </div>
-            <div class="hydro-item">
-              <span class="hydro-val" id="hydroLarvalReach">48 km / 5-day drift</span>
-              <span class="hydro-lbl">Pelagic Larval Reach</span>
-            </div>
-            <div class="hydro-item">
-              <span class="hydro-val" id="hydroUpwellingIndex">+2.1 m&sup2;/s</span>
-              <span class="hydro-lbl">Ekman Upwelling Index</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Keystone Marine Biosignatures -->
-        <div class="species-catalog">
-          <h4>Keystone Marine Biosignatures & Taxa</h4>
-          <div class="species-list" id="speciesList">
-            <!-- Populated via JavaScript with clean technical badges -->
-          </div>
-        </div>
-
-        <!-- Conservation Protocol -->
-        <div class="conservation-box">
-          <h5 id="conservationTitle">Community River-to-Reef Enforcement</h5>
-          <p id="dossierNotes">
-            Directly buffered by the Cagayan River estuary. Sediment siltation mitigation measures upstream across Macasandig and Carmen have restored underwater visibility to 18 meters, promoting rapid staghorn coral (Acropora) recolonization.
-          </p>
-        </div>
-
-        <!-- Export Telemetry Action -->
-        <div class="export-section">
-          <button class="btn-export" onclick="exportSanctuaryTelemetry()">[ EXPORT SANCTUARY TELEMETRY (JSON) ]</button>
-        </div>
-      </div>
-
-    </aside>
-
-  </main>
+  </footer>
 
   <script src="app.js"></script>
 </body>
