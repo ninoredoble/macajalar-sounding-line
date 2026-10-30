@@ -51,4 +51,4 @@ It deploys to GitHub Pages as plain files from the repository root.
 
 ## Name
 
-The repository is called `archipelago-marine-cadence`, which promises an archipelago-wide marine product. This study covers one bay. A more honest name would be `macajalar-sounding-line`.
+The repository was first called `archipelago-marine-cadence`, which promised an archipelago-wide marine product. This study covers one bay, so it is now `macajalar-sounding-line`.
