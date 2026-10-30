@@ -10,7 +10,7 @@ This is a design and engineering study, not a production system. There is no bac
 - Read the seabed profile along the line, with the same depth tints as the chart behind it.
 - Drag along the profile to lower the "lead" to any point on the line. A magenta dot follows on the chart and the readout shows the depth under it.
 - Switch soundings between metres and fathoms (1 fathom = 1.8288 m).
-- Raise or lower the tide and see the depth of water over every sounding change. Pick a row of the sample tide table to set it.
+- Raise or lower the tide and see the depth of water under the lead change; the soundings on the chart stay charted to datum. Pick a row of the sample tide table to set it.
 - Read the whole line as a table, for screen readers and for copying.
 - Three example lines are one click away.
 

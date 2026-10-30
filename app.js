@@ -162,6 +162,7 @@
   let u = 1;                 // chart units per screen pixel
   let narrow = false;        // phone-width chart: fewer labels, smaller rose
   let sweeping = false;
+  let sweepTimer = 0;
   let tween = null;
   let prof = null;           // last computed profile
   let profLayout = null;
@@ -676,7 +677,8 @@
     return [clamp(p.x, 0, W), clamp(p.y, 0, H)];
   }
 
-  function stopAuto() { sweeping = false; if (tween) { tween.cancelled = true; tween = null; } }
+  function stopSweep() { clearTimeout(sweepTimer); sweeping = false; }
+  function stopAuto() { stopSweep(); if (tween) { tween.cancelled = true; tween = null; } }
 
   ['A', 'B'].forEach((k) => {
     const g = handles[k].g;
@@ -770,7 +772,7 @@
     setCursorFromEvent(e);
   });
   profile.addEventListener('pointermove', (e) => {
-    if (scrubbing || e.pointerType === 'mouse') setCursorFromEvent(e);
+    if (scrubbing || e.pointerType === 'mouse') { stopSweep(); setCursorFromEvent(e); }
   });
   const endScrub = (e) => { scrubbing = false; if (profile.hasPointerCapture(e.pointerId)) profile.releasePointerCapture(e.pointerId); };
   profile.addEventListener('pointerup', endScrub);
@@ -903,5 +905,5 @@
     });
   }
 
-  if (reduceMotion.matches) S.cursor = 0.62; else setTimeout(sweep, 700);
+  if (reduceMotion.matches) S.cursor = 0.62; else sweepTimer = setTimeout(sweep, 700);
 })();
